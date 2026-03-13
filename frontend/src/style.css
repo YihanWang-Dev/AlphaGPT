@@ -1,0 +1,23 @@
+@import "./base.css";
+@import "./layout.css";
+@import "./components.css";
+
+/* 应用级覆盖与工具类 */
+:root {
+  --primary: #14b8a6; /* openknot theme primary */
+}
+
+/* 覆盖 layout.css 中的 collapsed sidebar 设置，使其在桌面上为窄栏，在移动端完全折叠 */
+.shell--nav-collapsed {
+  grid-template-columns: var(--shell-nav-rail-width) minmax(0, 1fr);
+}
+
+@media (max-width: 1100px) {
+  .shell--nav-collapsed {
+    grid-template-columns: 0px minmax(0, 1fr) !important;
+  }
+}
+
+.text-green { color: var(--ok); }
+.text-red { color: var(--destructive); }
+.hidden { display: none !important; }

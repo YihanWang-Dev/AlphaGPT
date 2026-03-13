@@ -37,8 +37,11 @@ solana>=0.30.0        # Solana Python SDK
 base58>=2.1.0         # Base58 encoding for Solana addresses
 
 # Dashboard & Visualization
-streamlit>=1.28.0     # Web dashboard framework
-plotly>=5.17.0        # Interactive charts
+# streamlit>=1.28.0     # Web dashboard framework (deprecated)
+# plotly>=5.17.0        # Interactive charts (deprecated)
+fastapi>=0.100.0      # Backend API framework
+uvicorn>=0.23.0       # ASGI server
+
 
 # PostgreSQL
 psycopg2-binary>=2.9.10
