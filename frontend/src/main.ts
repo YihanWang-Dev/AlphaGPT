@@ -1,340 +1,16 @@
 import './style.css';
 import { createChart, ColorType } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi } from 'lightweight-charts';
+import { createShell } from './layout';
 
 // State
 let currentView = 'overview';
 const API_BASE = 'http://localhost:8000/api';
 
-// Render the UI Shell
-document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-  <div class="shell shell--chat" id="app-shell">
-    <!-- Topbar -->
-    <header class="topbar">
-      <div class="topbar-left">
-        <button class="nav-collapse-toggle" id="sidebar-toggle" aria-label="Toggle Navigation">
-          <span class="nav-collapse-toggle__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <line x1="4" x2="20" y1="12" y2="12" />
-              <line x1="4" x2="20" y1="6" y2="6" />
-              <line x1="4" x2="20" y1="18" y2="18" />
-            </svg>
-          </span>
-        </button>
-        <div class="brand">
-          <div class="brand-text">
-            <span class="brand-title">🤖 ALPHAGPT COMMANDER</span>
-            <span class="brand-sub">Autonomous Solana Trading Bot</span>
-          </div>
-        </div>
-      </div>
-      <button
-        id="theme-mode-system"
-        class="topbar-search"
-        type="button"
-        style="display:none"
-      ></button>
-      <div class="topbar-status">
-        <span id="wallet-balance" class="brand-sub">Balance: ... SOL</span>
-        <div class="topbar-theme-mode" aria-label="Color mode" role="group">
-          <button
-            type="button"
-            class="topbar-theme-mode__btn"
-            id="theme-light"
-            aria-label="Light mode"
-          >
-            <svg viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="4" />
-              <path d="M12 2v2" />
-              <path d="M12 20v2" />
-              <path d="m4.93 4.93 1.41 1.41" />
-              <path d="m17.66 17.66 1.41 1.41" />
-              <path d="M2 12h2" />
-              <path d="M20 12h2" />
-              <path d="m6.34 17.66-1.41 1.41" />
-              <path d="m19.07 4.93-1.41 1.41" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            class="topbar-theme-mode__btn"
-            id="theme-dark"
-            aria-label="Dark mode"
-          >
-            <svg viewBox="0 0 24 24">
-              <path d="M12 3a6.5 6.5 0 0 0 9 9 9 9 0 1 1-9-9Z" />
-            </svg>
-          </button>
-        </div>
-      </div>
-    </header>
-
-    <!-- Sidebar -->
-    <nav class="shell-nav">
-      <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-          <div class="sidebar-brand">
-            <span class="sidebar-brand__title">MENU</span>
-          </div>
-          <button
-            type="button"
-            class="nav-collapse-toggle"
-            aria-label="Collapse sidebar"
-            id="sidebar-collapse-toggle"
-          >
-            <span class="nav-collapse-toggle__icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24">
-                <line x1="4" x2="20" y1="12" y2="12" />
-                <line x1="4" x2="20" y1="6" y2="6" />
-                <line x1="4" x2="20" y1="18" y2="18" />
-              </svg>
-            </span>
-          </button>
-        </div>
-        <div class="sidebar-nav">
-          <!-- Control Group -->
-          <div class="nav-group">
-            <div class="nav-group__label">
-              <span class="nav-group__label-text">控制 (Control)</span>
-            </div>
-            <div class="nav-group__items">
-              <button class="nav-item nav-item--active" data-view="overview">
-                <span class="nav-item__icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24">
-                    <line x1="12" x2="12" y1="20" y2="10" />
-                    <line x1="18" x2="18" y1="20" y2="4" />
-                    <line x1="6" x2="6" y1="20" y2="16" />
-                  </svg>
-                </span>
-                <span class="nav-item__text">概览 (Overview)</span>
-              </button>
-              <button class="nav-item" data-view="portfolio">
-                <span class="nav-item__icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                  </svg>
-                </span>
-                <span class="nav-item__text">投资组合 (Portfolio)</span>
-              </button>
-              <button class="nav-item" data-view="market">
-                <span class="nav-item__icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
-                    <path d="M2 12h20" />
-                  </svg>
-                </span>
-                <span class="nav-item__text">市场扫描 (Market)</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- System Group -->
-          <div class="nav-group" style="margin-top: 20px;">
-            <div class="nav-group__label">
-              <span class="nav-group__label-text">系统 (System)</span>
-            </div>
-            <div class="nav-group__items">
-              <button class="nav-item" data-view="logs">
-                <span class="nav-item__icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24">
-                    <path
-                      d="M8 21h12a2 2 0 0 0 2-2v-2H10v2a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v3h4"
-                    />
-                    <path d="M19 17V5a2 2 0 0 0-2-2H4" />
-                    <path d="M15 8h-5" />
-                    <path d="M15 12h-5" />
-                  </svg>
-                </span>
-                <span class="nav-item__text">系统日志 (Logs)</span>
-              </button>
-              <button class="nav-item" data-view="settings">
-                <span class="nav-item__icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24">
-                    <path
-                      d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
-                    />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
-                </span>
-                <span class="nav-item__text">常规配置 (Settings)</span>
-              </button>
-            </div>
-          </div>
-        </div>
-        <div class="sidebar-footer">
-          <div class="stack" style="padding: 10px;">
-            <button
-              id="btn-refresh"
-              class="nav-item"
-              style="justify-content: center; background: var(--bg-hover);"
-            >
-              <span class="nav-item__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                  <path
-                    d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"
-                  />
-                  <path d="M21 3v5h-5" />
-                </svg>
-              </span>
-              <span class="nav-item__text">刷新 (Refresh)</span>
-            </button>
-            <button
-              id="btn-stop"
-              class="nav-item"
-              style="justify-content: center; background: var(--danger-subtle); color: var(--danger);"
-            >
-              <span class="nav-item__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                  <rect width="14" height="14" x="5" y="5" rx="1" />
-                </svg>
-              </span>
-              <span class="nav-item__text">停止 (STOP)</span>
-            </button>
-          </div>
-        </div>
-      </aside>
-    </nav>
-
-    <!-- Main Content -->
-    <main class="content">
-      <!-- Overview View -->
-      <div id="view-overview" class="view-section">
-        <div class="content-header">
-          <div>
-            <div class="page-title">仪表盘概览</div>
-            <div class="page-sub">用于快速干预和查看全局系统状态</div>
-          </div>
-        </div>
-        <div class="ov-cards" style="margin-top: 24px;">
-          <div class="ov-card">
-            <div class="ov-card__label">开启仓位</div>
-            <div class="ov-card__value" id="val-open-pos">-</div>
-            <div class="ov-card__hint">当前已占用 / 最大可用仓位</div>
-          </div>
-          <div class="ov-card">
-            <div class="ov-card__label">总投资额</div>
-            <div class="ov-card__value" id="val-total-inv">- SOL</div>
-            <div class="ov-card__hint">按初始建仓成本估算</div>
-          </div>
-          <div class="ov-card">
-            <div class="ov-card__label">未实现盈亏 (估算)</div>
-            <div class="ov-card__value" id="val-unrealized-pnl">- SOL</div>
-            <div class="ov-card__hint">根据当前价格粗略估算的浮动盈亏</div>
-          </div>
-          <div class="ov-card">
-            <div class="ov-card__label">活跃策略</div>
-            <div class="ov-card__value" id="val-strategy">AlphaGPT-v1</div>
-            <div class="ov-card__hint">当前运行中的策略版本</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Portfolio View -->
-      <div id="view-portfolio" class="view-section" style="display: none;">
-        <div class="content-header">
-          <div>
-            <div class="page-title">投资组合</div>
-            <div class="page-sub">查看和管理当前所有处于持仓状态的代币，点击行查看 K 线</div>
-          </div>
-        </div>
-        <div class="data-table-wrapper" style="margin-top: 24px;">
-          <div class="data-table-container">
-            <table class="data-table" id="portfolio-table">
-              <thead>
-                <tr>
-                  <th>Symbol</th>
-                  <th>Entry Price</th>
-                  <th>Highest</th>
-                  <th>Amount Held</th>
-                  <th>PnL %</th>
-                  <th>Moonbag</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </div>
-        <div
-          id="chart-container"
-          style="width: 100%; height: 400px; margin-top: 24px; display: none;"
-        ></div>
-      </div>
-
-      <!-- Market Scanner View -->
-      <div id="view-market" class="view-section" style="display: none;">
-        <div class="content-header">
-          <div>
-            <div class="page-title">市场扫描</div>
-            <div class="page-sub">当前数据库中抓取到的最高分标的，点击行查看 K 线</div>
-          </div>
-        </div>
-        <div class="data-table-wrapper" style="margin-top: 24px;">
-          <div class="data-table-container">
-            <table class="data-table" id="market-table">
-              <thead>
-                <tr>
-                  <th>Symbol</th>
-                  <th>Address</th>
-                  <th>Close</th>
-                  <th>Volume</th>
-                  <th>Liquidity</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- Logs View -->
-      <div id="view-logs" class="view-section" style="display: none;">
-        <div class="content-header">
-          <div>
-            <div class="page-title">系统日志</div>
-            <div class="page-sub">查看最近的后台执行日志与报错</div>
-          </div>
-        </div>
-        <div style="margin-top: 24px;">
-          <pre id="logs-container" class="code-block" style="max-height: 420px;"></pre>
-        </div>
-      </div>
-
-      <!-- Settings View (常规页面) -->
-      <div id="view-settings" class="view-section" style="display: none;">
-        <div class="content-header">
-          <div>
-            <div class="page-title">常规设置</div>
-            <div class="page-sub">系统运行参数及常规选项配置</div>
-          </div>
-        </div>
-        <div class="grid" style="margin-top: 24px; max-width: 600px;">
-          <div class="card">
-            <div class="card-title">API 配置</div>
-            <div class="card-sub">RPC、行情等后端服务的访问参数。</div>
-            <div class="form-grid" style="margin-top: 16px;">
-              <label class="field full">
-                <span>RPC 节点地址</span>
-                <input type="text" value="https://api.mainnet-beta.solana.com" />
-              </label>
-              <label class="field full">
-                <span>Birdeye API Key</span>
-                <input type="password" value="********" />
-              </label>
-              <label class="field full">
-                <span>单次最大持仓数</span>
-                <input type="number" value="5" />
-              </label>
-            </div>
-            <div style="margin-top: 16px;">
-              <button class="btn primary" type="button">保存设置 (Save)</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </main>
-  </div>
-`;
+const appRoot = document.querySelector<HTMLDivElement>('#app');
+if (appRoot) {
+  appRoot.appendChild(createShell());
+}
 
 // DOM Elements
 const sidebarToggle = document.getElementById('sidebar-toggle');
@@ -353,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupNavigation();
   setupThemeModeToggle();
   setupActions();
+  setupSettingsTabs();
   
   // Load initial view data
   loadOverview();
@@ -429,6 +106,33 @@ function setupThemeModeToggle() {
 
   lightBtn?.addEventListener('click', () => applyMode('light'));
   darkBtn?.addEventListener('click', () => applyMode('dark'));
+}
+
+function setupSettingsTabs() {
+  const tabButtons = document.querySelectorAll<HTMLButtonElement>('[data-settings-tab]');
+  const panels = document.querySelectorAll<HTMLElement>('[data-settings-panel]');
+
+  if (!tabButtons.length || !panels.length) return;
+
+  const activate = (target: string) => {
+    tabButtons.forEach((btn) => {
+      const isActive = btn.dataset.settingsTab === target;
+      btn.classList.toggle('settings-tab--active', isActive);
+      btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+
+    panels.forEach((panel) => {
+      const isActive = panel.dataset.settingsPanel === target;
+      panel.classList.toggle('settings-panel--active', isActive);
+    });
+  };
+
+  tabButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.settingsTab || 'api';
+      activate(target);
+    });
+  });
 }
 
 function setupActions() {
